@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import HeroSection from './components/HeroSection';
 import IngredientInputSection from './components/IngredientInputSection';
@@ -11,7 +10,7 @@ import CookingView from './components/CookingView'; // Import new CookingView
 import ChatbotWidget from './components/ChatbotWidget'; // Import new ChatbotWidget
 import { Ingredient, Recipe } from './types';
 import { TAMIL_NADU_INGREDIENTS } from './constants';
-import { ai, suggestNextIngredient, getRecipes, generateRecipeImage } from './services/geminiService'; // Import 'ai' instance
+import { getGeminiAI, suggestNextIngredient, getRecipes, generateRecipeImage } from './services/geminiService'; // Import 'getGeminiAI' function
 import { getSavedRecipes, saveRecipe, removeRecipe, getAllRatings, saveRating } from './services/localStorageService'; // Import local storage service
 import { Chat } from '@google/genai'; // Import Chat type
 
@@ -209,7 +208,7 @@ const App: React.FC = () => {
     setIsChatbotOpen(prev => {
       if (!prev && !chatInstanceRef.current) {
         // Initialize chat only when opening for the first time
-        chatInstanceRef.current = ai.chats.create({
+        chatInstanceRef.current = getGeminiAI().chats.create({ // Use getGeminiAI() here
           model: 'gemini-2.5-flash',
           config: {
             systemInstruction: 'You are a helpful culinary assistant from SmartPantry.AI, specializing in Tamil Nadu cuisine. You can answer questions about ingredients, cooking techniques, and app usage. You can also respond in multiple languages if asked. Keep your responses concise and friendly.',
