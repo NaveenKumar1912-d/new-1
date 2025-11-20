@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Ingredient } from '../types';
-import { TAMIL_NADU_INGREDIENTS, DIETARY_RESTRICTIONS, CUISINE_TYPES, SUPPORTED_LANGUAGES, ALLERGEN_OPTIONS } from '../constants';
+import { TAMIL_NADU_INGREDIENTS, DIETARY_RESTRICTIONS, CUISINE_TYPES, SUPPORTED_LANGUAGES, ALLERGEN_OPTIONS, OCCASION_TYPES } from '../constants';
 
 interface IngredientInputSectionProps {
   selectedIngredients: Ingredient[];
@@ -22,6 +22,8 @@ interface IngredientInputSectionProps {
   onClearFilters: () => void; // New prop for clearing filters
   language: string; // New prop for selected language
   onLanguageChange: (value: string) => void; // New prop for changing language
+  occasionType: string; // New prop for occasion type
+  onOccasionTypeChange: (value: string) => void; // New prop for changing occasion type
 }
 
 const MicIcon = () => (
@@ -55,6 +57,8 @@ const IngredientInputSection: React.FC<IngredientInputSectionProps> = ({
   onClearFilters, // Destructure new prop
   language, // Destructure new prop
   onLanguageChange, // Destructure new prop
+  occasionType, // Destructure new prop
+  onOccasionTypeChange, // Destructure new prop
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [suggestions, setSuggestions] = useState<Ingredient[]>([]);
@@ -63,6 +67,8 @@ const IngredientInputSection: React.FC<IngredientInputSectionProps> = ({
   const wrapperRef = useRef<HTMLDivElement>(null);
   const suggestionsRef = useRef<HTMLUListElement>(null);
   const MEAL_TYPES = ['All Meals', 'Breakfast', 'Lunch', 'Dinner', 'Snacks']; // Moved here from constants for now as it's the only usage
+  const uniqueId = React.useId(); // Use useId for unique IDs
+  const suggestionsListId = `${uniqueId}-suggestions`;
 
   useEffect(() => {
     if (inputValue) {
@@ -167,23 +173,39 @@ const IngredientInputSection: React.FC<IngredientInputSectionProps> = ({
       <div className="relative mb-4">
         <input
           type="text"
+          id={`${uniqueId}-ingredient-input`}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onFocus={() => setIsSuggestionsVisible(inputValue.length > 0)}
           onKeyDown={handleKeyDown}
           placeholder="e.g., Type 'To...' for Tomato, Toor Dal"
           className="w-full p-4 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#F5C16C] focus:border-transparent transition hover:border-gray-400"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-controls={suggestionsListId}
+          aria-expanded={isSuggestionsVisible}
+          aria-haspopup="listbox"
+          aria-activedescendant={highlightedIndex > -1 ? `${suggestionsListId}-${highlightedIndex}` : undefined}
         />
         <button onClick={handleVoiceInput} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#E94E3C]">
             <MicIcon />
         </button>
         {isSuggestionsVisible && suggestions.length > 0 && (
-          <ul ref={suggestionsRef} className="absolute z-20 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-xl max-h-60 overflow-y-auto">
+          <ul
+            ref={suggestionsRef}
+            id={suggestionsListId}
+            role="listbox"
+            aria-label="Ingredient Suggestions"
+            className="absolute z-20 w-full bg-white border border-gray-200 rounded-lg mt-1 shadow-xl max-h-60 overflow-y-auto"
+          >
             {suggestions.map((suggestion, index) => (
               <li
                 key={suggestion.name}
+                id={`${suggestionsListId}-${index}`}
                 onClick={() => handleSelect(suggestion)}
                 onMouseOver={() => setHighlightedIndex(index)}
+                role="option"
+                aria-selected={index === highlightedIndex}
                 className={`p-3 cursor-pointer flex items-center gap-3 transition-colors ${
                   index === highlightedIndex ? 'bg-[#FFF7E6]' : 'hover:bg-gray-100'
                 }`}
@@ -306,6 +328,26 @@ const IngredientInputSection: React.FC<IngredientInputSectionProps> = ({
             </div>
         </div>
 
+        <div> {/* New: Occasion Type Filter */}
+            <h4 className="block text-sm font-medium text-gray-700 mb-2 text-center">Occasion Type</h4>
+            <div className="flex flex-wrap justify-center gap-2">
+                {OCCASION_TYPES.map((occasion) => (
+                <button
+                    key={occasion}
+                    onClick={() => onOccasionTypeChange(occasion)}
+                    className={`py-2 px-4 rounded-full font-semibold transition-colors text-sm sm:text-base ${
+                    occasionType === occasion
+                        ? 'bg-[#E94E3C] text-white shadow'
+                        : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                    }`}
+                    aria-pressed={occasionType === occasion}
+                >
+                    {occasion}
+                </button>
+                ))}
+            </div>
+        </div>
+
         <div>
           <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-2 text-center">Recipe Language</label>
           <div className="flex justify-center">
@@ -332,6 +374,7 @@ const IngredientInputSection: React.FC<IngredientInputSectionProps> = ({
           onClick={onSuggestIngredient}
           disabled={isSuggesting}
           className="w-full sm:w-auto bg-white border border-[#6BBE45] text-[#6BBE45] font-semibold py-2 px-6 rounded-full hover:bg-[#6BBE45] hover:text-white transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex justify-center items-center"
+          aria-label={isSuggesting ? 'Suggesting ingredient...' : 'Suggest Next Ingredient'}
         >
           {isSuggesting ? 'Thinking...' : '💡 Suggest Next Ingredient'}
         </button>
@@ -339,6 +382,7 @@ const IngredientInputSection: React.FC<IngredientInputSectionProps> = ({
           onClick={onFindRecipes}
           disabled={selectedIngredients.length === 0 || isFinding}
           className="w-full sm:w-auto bg-[#E94E3C] text-white font-bold py-3 px-8 rounded-full hover:bg-red-700 transition-all duration-300 disabled:opacity-50 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          aria-label={isFinding ? 'Finding recipes...' : 'Find Recipes'}
         >
           {isFinding ? 'Finding Recipes...' : '🍳 Find Recipes'}
         </button>

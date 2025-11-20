@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Recipe } from '../types';
 import { ClockIcon, ExternalLinkIcon } from './RecipeResultSection'; // Reusing icons
@@ -72,7 +73,7 @@ const CookingView: React.FC<CookingViewProps> = ({ recipe, onBack }) => {
           </ul>
 
           <h3 className="text-xl font-bold text-gray-700 mb-3 border-b border-amber-100 pb-2">Ingredient Checklist</h3>
-          <ul className="space-y-3 text-gray-800">
+          <ul className="space-y-3 text-gray-800" role="group" aria-label="Ingredient Checklist">
             {allIngredients.map((ing, index) => (
               <li key={`checklist-${ing}-${index}`} className="flex items-center">
                 <input

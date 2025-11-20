@@ -1,3 +1,5 @@
+
+
 import React, { useState, useRef, useEffect } from 'react';
 
 interface ChatbotWidgetProps {
@@ -30,6 +32,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   const [inputValue, setInputValue] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const titleId = React.useId(); // Unique ID for the chatbot title
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -56,9 +59,15 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-full max-w-sm md:max-w-md bg-white rounded-xl shadow-2xl flex flex-col h-[70vh] md:h-[80vh]">
+    <div 
+        id="chatbot-widget"
+        className="fixed bottom-4 right-4 z-50 w-full max-w-sm md:max-w-md bg-white rounded-xl shadow-2xl flex flex-col h-[70vh] md:h-[80vh]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+    >
       <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-[#E94E3C] text-white rounded-t-xl">
-        <h3 className="text-lg font-bold">SmartPantry AI Assistant</h3>
+        <h3 id={titleId} className="text-lg font-bold">SmartPantry AI Assistant</h3>
         <button
           onClick={onClose}
           className="p-1 rounded-full hover:bg-white/20 transition-colors"
@@ -68,7 +77,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         </button>
       </div>
 
-      <div className="flex-grow overflow-y-auto p-4 space-y-4">
+      <div className="flex-grow overflow-y-auto p-4 space-y-4" role="log" aria-live="polite">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -89,7 +98,7 @@ const ChatbotWidget: React.FC<ChatbotWidgetProps> = ({
         ))}
         {isTyping && (
           <div className="flex justify-start">
-            <div className="max-w-[80%] px-4 py-2 rounded-lg text-sm shadow bg-gray-100 text-gray-800 rounded-bl-none">
+            <div className="max-w-[80%] px-4 py-2 rounded-lg text-sm shadow bg-gray-100 text-gray-800 rounded-bl-none" role="status" aria-live="polite">
               <span className="animate-pulse">AI is typing...</span>
             </div>
           </div>

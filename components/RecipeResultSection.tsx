@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Recipe, Ingredient } from '../types';
 
@@ -107,17 +108,23 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSaveRecipe, onRemoveS
         onShowToast(`Hooray! You cooked "${recipe.name}"!`, 'success');
     };
 
+    const stepsId = React.useId(); // Unique ID for cooking steps
+
     return (
-        <div className={`relative bg-white rounded-xl shadow-md overflow-hidden transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl flex flex-col ${recipe.isRecommended ? 'border-2 border-[#F5C16C] ring-4 ring-amber-100' : ''}`}>
+        <div 
+            className={`relative bg-white rounded-xl shadow-md overflow-hidden transform hover:-translate-y-2 transition-all duration-300 hover:shadow-xl flex flex-col ${recipe.isRecommended ? 'border-2 border-[#F5C16C] ring-4 ring-amber-100' : ''}`}
+            role={recipe.isRecommended ? "region" : undefined}
+            aria-labelledby={recipe.isRecommended ? `${recipe.name.replace(/\s/g, '-')}-title` : undefined}
+        >
              {recipe.isRecommended && (
                 <div className="absolute top-3 right-3 z-10 bg-[#F5C16C] text-gray-900 text-xs font-bold px-3 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-                    <span role="img" aria-label="star">⭐</span>
+                    <span role="img" aria-label="star" aria-hidden="true">⭐</span>
                     <span>Top Pick</span>
                 </div>
             )}
             <img className="h-48 w-full object-cover" src={imageUrl} alt={recipe.name} />
             <div className="p-6 flex flex-col flex-grow">
-                <h3 className="text-xl font-bold text-gray-800 mb-2">{recipe.name}</h3>
+                <h3 id={`${recipe.name.replace(/\s/g, '-')}-title`} className="text-xl font-bold text-gray-800 mb-2">{recipe.name}</h3>
                 
                 {recipe.isRecommended && recipe.recommendationReason && (
                     <div className="bg-amber-50 border-l-4 border-amber-400 text-amber-800 p-3 rounded-r-lg mb-4 text-sm italic">
@@ -127,7 +134,12 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSaveRecipe, onRemoveS
 
                 <div className="text-gray-600 text-sm mb-3 flex-grow">{recipe.description}</div>
                 
-                <div className="flex items-center gap-1 mb-4" onMouseLeave={() => setHoverRating(0)}>
+                <div 
+                    className="flex items-center gap-1 mb-4" 
+                    onMouseLeave={() => setHoverRating(0)}
+                    role="radiogroup"
+                    aria-label={`Rate ${recipe.name} from 1 to 5 stars`}
+                >
                     {[1, 2, 3, 4, 5].map((star) => (
                         <span 
                             key={star} 
@@ -136,8 +148,9 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSaveRecipe, onRemoveS
                                 onShowToast(`Rated "${recipe.name}" ${star} stars!`, 'info');
                             }}
                             onMouseEnter={() => setHoverRating(star)}
-                            aria-label={`${star} out of 5 stars`}
-                            role="button"
+                            role="radio"
+                            aria-label={`${star} stars`}
+                            aria-checked={star === (currentRating || 0)}
                             tabIndex={0}
                             onKeyDown={(e) => {
                                 if (e.key === 'Enter' || e.key === ' ') {
@@ -182,11 +195,12 @@ const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSaveRecipe, onRemoveS
                             onClick={() => setShowSteps(!showSteps)}
                             className="w-full flex justify-between items-center text-left font-semibold text-sm text-gray-700 py-2 px-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                             aria-expanded={showSteps}
+                            aria-controls={stepsId}
                         >
                             <span>View All Cooking Steps</span>
                             {showSteps ? <ChevronUpIcon /> : <ChevronDownIcon />}
                         </button>
-                        <div className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${showSteps ? 'max-h-96' : 'max-h-0'}`}>
+                        <div id={stepsId} className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${showSteps ? 'max-h-96' : 'max-h-0'}`}>
                             <ol className="list-decimal list-inside text-gray-600 text-sm mt-2 space-y-1">
                                 {recipe.cookingSteps.map((step, index) => (
                                     <li key={index}>{step}</li>
@@ -263,7 +277,32 @@ interface RecipeResultSectionProps {
   onStartCooking: (recipe: Recipe) => void; // New prop
 }
 
+const parseTimeStringToMinutes = (timeString: string): number => {
+    let totalMinutes = 0;
+    const hoursMatch = timeString.match(/(\d+)\s*hour(s)?/);
+    const minutesMatch = timeString.match(/(\d+)\s*min(ute(s)?)?/);
+
+    if (hoursMatch && hoursMatch[1]) {
+        totalMinutes += parseInt(hoursMatch[1], 10) * 60;
+    }
+    if (minutesMatch && minutesMatch[1]) {
+        totalMinutes += parseInt(minutesMatch[1], 10);
+    }
+    return totalMinutes;
+};
+
 const RecipeResultSection: React.FC<RecipeResultSectionProps> = ({ recipes, isLoading, error, hasSearched, onSaveRecipe, onRemoveSavedRecipe, savedRecipes, recipeRatings, onRateRecipe, onShowToast, onStartCooking }) => {
+  const [sortKey, setSortKey] = useState<'none' | 'prepTime' | 'cookingTime'>('none');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+
+  const handleSortKeyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+      setSortKey(e.target.value as typeof sortKey);
+  };
+
+  const handleSortOrderToggle = () => {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+  };
+
   const renderContent = () => {
     if (isLoading) {
       return (
@@ -299,9 +338,22 @@ const RecipeResultSection: React.FC<RecipeResultSectionProps> = ({ recipes, isLo
     }
 
     const sortedRecipes = [...recipes].sort((a, b) => {
+        // Primary sort: Recommended recipes first
         if (a.isRecommended && !b.isRecommended) return -1;
         if (!a.isRecommended && b.isRecommended) return 1;
-        return 0;
+
+        // Secondary sort: By time if a sortKey is selected
+        if (sortKey !== 'none') {
+            const aTime = parseTimeStringToMinutes(a[sortKey]);
+            const bTime = parseTimeStringToMinutes(b[sortKey]);
+
+            if (sortOrder === 'asc') {
+                return aTime - bTime;
+            } else {
+                return bTime - aTime;
+            }
+        }
+        return 0; // Maintain original order if no specific time sort
     });
 
     return (
@@ -326,10 +378,35 @@ const RecipeResultSection: React.FC<RecipeResultSectionProps> = ({ recipes, isLo
   return (
     <div className="w-full max-w-6xl mx-auto py-12">
       <h2 className="text-3xl font-bold text-gray-800 mb-8 text-center">Your AI-Powered Recipe Ideas</h2>
+      
+      {hasSearched && recipes.length > 0 && (
+          <div className="flex justify-center items-center gap-4 mb-8">
+              <label htmlFor="sort-by" className="text-gray-700 font-medium">Sort by:</label>
+              <select
+                  id="sort-by"
+                  value={sortKey}
+                  onChange={handleSortKeyChange}
+                  className="p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-[#F5C16C] focus:border-transparent transition"
+                  aria-label="Sort recipes by"
+              >
+                  <option value="none">Default</option>
+                  <option value="prepTime">Prep Time</option>
+                  <option value="cookingTime">Cooking Time</option>
+              </select>
+              <button
+                  onClick={handleSortOrderToggle}
+                  className="p-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={sortKey === 'none'}
+                  aria-label={`Current sort order: ${sortOrder === 'asc' ? 'Ascending' : 'Descending'}. Click to change to ${sortOrder === 'asc' ? 'descending' : 'ascending'}`}
+              >
+                  {sortOrder === 'asc' ? '↑' : '↓'}
+              </button>
+          </div>
+      )}
+
       {renderContent()}
     </div>
   );
 };
 
 export default RecipeResultSection;
-    

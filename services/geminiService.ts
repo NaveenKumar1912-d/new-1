@@ -1,3 +1,5 @@
+
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { Recipe } from '../types';
 import { SUPPORTED_LANGUAGES } from "../constants";
@@ -31,7 +33,8 @@ export const getRecipes = async (
   mealType: string,
   dietaryRestriction: string,
   cuisineType: string,
-  language: string // New parameter for language
+  language: string, // New parameter for language
+  occasionType: string // New parameter for occasion type
 ): Promise<Recipe[]> => {
   let prompt = `I have the following ingredients: ${ingredients.join(', ')}.`;
 
@@ -42,10 +45,11 @@ export const getRecipes = async (
   const mealTypeQuery = mealType === 'All Meals' ? '' : ` suitable for ${mealType}`;
   const dietaryRestrictionQuery = dietaryRestriction === 'None' ? '' : ` which are ${dietaryRestriction.toLowerCase()}`;
   const cuisineTypeQuery = cuisineType === 'All Cuisines' ? 'authentic Tamil Nadu style' : ` ${cuisineType} style Tamil Nadu`;
+  const occasionTypeQuery = occasionType === 'Everyday' ? '' : ` for a ${occasionType} occasion`; // New: Occasion query
 
   const languageName = SUPPORTED_LANGUAGES.find(lang => lang.code === language)?.name || 'English'; // Get full language name
 
-  prompt += ` Please suggest 3 ${cuisineTypeQuery} recipes${dietaryRestrictionQuery}${mealTypeQuery} I can make. Critically, provide all recipe details (name, description, ingredients, steps, etc.) in **${languageName}**. For each recipe, provide a short description, and list only the ingredients I have that are used in this recipe (in 'matchingIngredients'). Critically, all suggested recipes must strictly use *only* the ingredients provided to you in my list. Do NOT suggest any recipes that require ingredients I have not explicitly listed. Therefore, the 'missingIngredients' array for any suggested recipe MUST be empty. Also, provide an estimated cooking time, prep time, calorie count, protein amount, a simple, effective image search query (e.g., 'Chettinad Chicken Curry'), AN OPTIONAL source URL for the recipe (if a relevant and authoritative one exists), AND step-by-step cooking instructions as a list of strings. Critically, choose ONE of these recipes as a "Top Recommendation". For this recommended recipe, set 'isRecommended' to true and provide a brief 'recommendationReason' (e.g., "Uses the most ingredients you have" or "A classic dish that's easy to start with"). For the other non-recommended recipes, set 'isRecommended' to false and the 'recommendationReason' to an empty string.`;
+  prompt += ` Please suggest 10 ${cuisineTypeQuery} recipes${dietaryRestrictionQuery}${mealTypeQuery}${occasionTypeQuery} I can make. Critically, provide all recipe details (name, description, ingredients, steps, etc.) in **${languageName}**. For each recipe, provide a short description, and list only the ingredients I have that are used in this recipe (in 'matchingIngredients'). Critically, all suggested recipes must strictly use *only* the ingredients provided to you in my list. Do NOT suggest any recipes that require ingredients I have not explicitly listed. Therefore, the 'missingIngredients' array for any suggested recipe MUST be empty. Also, provide an estimated cooking time, prep time, calorie count, protein amount, a simple, effective image search query (e.g., 'Chettinad Chicken Curry'), AN OPTIONAL source URL for the recipe (if a relevant and authoritative one exists), AND step-by-step cooking instructions as a list of strings. Critically, choose ONE of these recipes as a "Top Recommendation". For this recommended recipe, set 'isRecommended' to true and provide a brief 'recommendationReason' (e.g., "Uses the most ingredients you have" or "A classic dish that's easy to start with"). For the other non-recommended recipes, set 'isRecommended' to false and the 'recommendationReason' to an empty string.`;
 
   try {
     const response = await getGeminiAI().models.generateContent({

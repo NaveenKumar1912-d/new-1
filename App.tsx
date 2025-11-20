@@ -1,3 +1,5 @@
+
+
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import HeroSection from './components/HeroSection';
 import IngredientInputSection from './components/IngredientInputSection';
@@ -48,6 +50,9 @@ const App: React.FC = () => {
 
   // New state for language selection
   const [language, setLanguage] = useState('en');
+
+  // New state for occasion type
+  const [occasionType, setOccasionType] = useState('Everyday');
 
 
   // Load saved recipes and ratings from local storage on initial mount
@@ -118,7 +123,7 @@ const App: React.FC = () => {
     setRecipes([]); // Clear previous recipes
     try {
       const ingredientNames = selectedIngredients.map(i => i.name);
-      const generatedRecipes = await getRecipes(ingredientNames, allergies, mealType, dietaryRestriction, cuisineType, language);
+      const generatedRecipes = await getRecipes(ingredientNames, allergies, mealType, dietaryRestriction, cuisineType, language, occasionType);
 
       // Generate images concurrently for all recipes
       const recipesWithImages = await Promise.all(
@@ -152,7 +157,7 @@ const App: React.FC = () => {
     } finally {
       setIsFinding(false);
     }
-  }, [selectedIngredients, allergies, mealType, dietaryRestriction, cuisineType, language, addToast]);
+  }, [selectedIngredients, allergies, mealType, dietaryRestriction, cuisineType, language, occasionType, addToast]);
 
   const handleClearFilters = useCallback(() => {
     setAllergies('');
@@ -160,6 +165,7 @@ const App: React.FC = () => {
     setDietaryRestriction('None');
     setCuisineType('All Cuisines');
     setLanguage('en'); // Reset language to default
+    setOccasionType('Everyday'); // Reset occasion type to default
     addToast("All filters cleared.", 'info');
   }, [addToast]);
 
@@ -286,12 +292,16 @@ const App: React.FC = () => {
               onClearFilters={handleClearFilters}
               language={language} // Pass language prop
               onLanguageChange={setLanguage} // Pass language change handler
+              occasionType={occasionType} // New: Pass occasionType prop
+              onOccasionTypeChange={setOccasionType} // New: Pass occasionType change handler
             />
 
             <div className="flex justify-center mt-6">
                 <button
                     onClick={handleOpenSavedRecipes}
                     className="bg-[#E94E3C] text-white font-semibold py-2 px-6 rounded-full hover:bg-red-700 transition-all duration-300 flex items-center gap-2"
+                    aria-expanded={showSavedRecipesModal}
+                    aria-controls="saved-recipes-modal"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5">
                         <path d="M11.645 20.917L3.423 9.75A6.733 6.733 0 012.25 6.75c0-3.181 2.579-5.75 5.75-5.75 1.565 0 3.033.627 4.07 1.636l-.001-.002.002-.002A5.766 5.766 0 0116.5 1c3.171 0 5.75 2.579 5.75 5.75a6.733 6.733 0 01-1.173 3l-8.222 11.167a.75.75 0 01-1.115 0z" />
@@ -334,6 +344,8 @@ const App: React.FC = () => {
               onClick={toggleChatbot}
               className="fixed bottom-4 right-4 bg-[#E94E3C] text-white p-4 rounded-full shadow-lg hover:bg-red-700 transition-colors z-40"
               aria-label="Open AI Chatbot"
+              aria-expanded={isChatbotOpen}
+              aria-controls="chatbot-widget"
           >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.75 9.75 0 01-3.105-.562c-.39-.108-.67.243-.603.662A8.964 8.964 0 0012 21.75c4.971 0 9-3.694 9-8.25zm-9-8.25a9.75 9.75 0 00-3.105.562c-.39.108-.67-.243-.603-.662A8.964 8.964 0 0012 2.25c4.971 0 9 3.694 9 8.25z" />

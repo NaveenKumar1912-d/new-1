@@ -1,5 +1,6 @@
 
 
+
 import React from 'react';
 import { Recipe } from '../types';
 import { ClockIcon } from './RecipeResultSection'; // Reusing icons from RecipeResultSection
@@ -26,11 +27,13 @@ const ExternalLinkIcon = () => (
 const SavedRecipesModal: React.FC<SavedRecipesModalProps> = ({ isOpen, onClose, savedRecipes, onRemoveRecipe }) => {
     if (!isOpen) return null;
 
+    const modalTitleId = React.useId(); // Generate a unique ID for the modal title
+
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm">
+        <div id="saved-recipes-modal" className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby={modalTitleId}>
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col">
                 <div className="relative p-6 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-800 text-center">Your Saved Recipes</h2>
+                    <h2 id={modalTitleId} className="text-2xl font-bold text-gray-800 text-center">Your Saved Recipes</h2>
                     <button
                         onClick={onClose}
                         className="absolute top-4 right-4 text-gray-500 hover:text-gray-800 transition-colors"

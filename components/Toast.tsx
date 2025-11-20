@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 
 interface ToastProps {
@@ -44,7 +45,8 @@ const Toast: React.FC<ToastProps> = ({ id, message, type, onClose, duration = 30
     <div
       className={`relative flex items-center gap-3 p-4 pr-10 rounded-lg shadow-lg text-white transition-all duration-300 ${bgColor}
         ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}
-      role="alert"
+      role="status" // Announce changes to screen readers politely
+      aria-live="polite"
     >
       <span className="text-xl">{icon}</span>
       <span>{message}</span>
